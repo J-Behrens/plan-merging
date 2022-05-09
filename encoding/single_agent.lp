@@ -42,13 +42,6 @@ position(R,C,T) :- move(R,D,T), position(R,C',T-1),     nextto(C',D,C).
 % - inertia ---------------------------------------------------------------------
 position(R,C,T) :- position(R,C,T-1), not move(R,_,T), isRobot(R), time(T).
 
-% - edge collision --------------------------------------------------------------
-%moveto(C',C,T) :- nextto(C',D,C), position(R,C',T-1), move(R,D,T).
-% :- moveto(C',C,T), moveto(C,C',T), C < C'.
-
-% - vertex collision ------------------------------------------------------------
-% :- { position(R,C,T) : isRobot(R) }  > 1, position(C), time(T).
-
 % - auxiliaries -----------------------------------------------------------------
  :- { position(R,C,T) } != 1, isRobot(R), time(T).    % REDUNDANT but PERFORMANT?
 
@@ -61,6 +54,6 @@ processed(A)   :- processed(A,R).
 
 % Output conversion
 #show.
-#show init/2.
+%#show init/2.
 #show position(R,P,T) : position(R,P,T), isRobot(R).
 #show occurs(object(robot,R), action(move,D),     T) :    move(robot(R),D,T).
