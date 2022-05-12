@@ -11,4 +11,4 @@ Can be resolved by letting agents wait or by taking alternative routes.
 - Agents have different path length, no follow up conflicts
 - Agent with smaller path length waits one timestep
 
-![alt text](https://github.com/J-Behrens/plan-merging/blob/main/Test-Instances/Vertex-Conflicts/3x4_unequal/3x4_unequal.gif "unmerged and merged plan animation")
+  ![alt text](https://github.com/J-Behrens/plan-merging/blob/main/Test-Instances/Vertex-Conflicts/3x4_unequal/3x4_unequal.gif "unmerged and merged plan animation")
