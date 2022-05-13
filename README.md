@@ -10,8 +10,3 @@
 #### Happen if multiple agents are at the same vertex at the same time (left GIF).
 Can be resolved by letting agents wait (right GIF) or by taking alternative routes.
 ![alt text](https://github.com/J-Behrens/plan-merging/blob/main/Test-Instances/Vertex-Conflicts/3x4_unequal/3x4_unequal.gif "unmerged and merged plan animation")
-
-## Encodings:
-### [Simple Wait:](../main/encoding/simple_wait.lp)
-- Resolves one vertex conflict per agent
-- Agent with smaller or equal path length waits one timestep at the beginning
