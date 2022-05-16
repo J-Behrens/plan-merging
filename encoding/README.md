@@ -10,7 +10,7 @@
 - Resolves one vertex conflict per agent
 - Agent with smaller or equal path length waits one timestep at the beginning
 ### WIP [Sized Wait:](../encoding/sized_wait.lp)
-- Able to resolve multiple conflicts per agent
+- Able to resolve multiple vertex conflicts per agent
 - Detects size of conflicts
 - Resolves all conflicts of an agent by resolving its biggest conflict
 
