@@ -13,13 +13,14 @@ position(shelf(S),P,T) :- init(object(shelf,S), value(at,P)), time(T).
 position(robot(R),P,0) :- init(object(robot,R), value(at,P)).
 position(P)            :- init(object(node ,_), value(at,P)).
 
+time(T) :- move(_,_,T).
+time(T-1) :- time(T), T>0.
+
 % - move/3 ----------------------------------------------------------------------
 position(robot(R),(X+DX,Y+DY),T) :- move(robot(R),(DX,DY),T), position(robot(R),(X,Y),T-1).
 
 % - inertia ---------------------------------------------------------------------
 position(robot(R),C,T) :- position(robot(R),C,T-1), not move(robot(R),_,T), time(T).
-
-time(0..T) :- move(_,_,T).
 
 % One graph per time
 graph(T) :- time(T).
