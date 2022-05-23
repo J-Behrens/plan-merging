@@ -1,6 +1,22 @@
 # Plan Merging
 #### This project is about merging single agent plans so that the resulting plan is conflict free.
 
+### [merge.py:](../merge.py.)
+```sh
+usage: merge.py [-h] -i INSTANCE [-e ENCODING] [-s SINGLE] [-t] [-v]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i INSTANCE, --instance INSTANCE
+                        Instance file
+  -e ENCODING, --encoding ENCODING
+                        Merging encoding
+  -s SINGLE, --single SINGLE
+                        Get single agent plans
+  -t, --test            Test merging encoding
+  -v, --visualize       Visualize output with asprilo visualizer
+```
+
 ## Edge conflicts
 #### Happen if two agents move along the same edge at the same time (left GIF).
 #### Can be resolved by doing a sidestep or taking alternative routes (right GIF) or by switching plans (middle GIF, anonymous MAPF).
