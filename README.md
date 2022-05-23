@@ -1,7 +1,7 @@
 # Plan Merging
 #### This project is about merging single agent plans so that the resulting plan is conflict free.
 
-### [merge.py:](../merge.py.)
+### [merge.py:](merge.py)
 ```sh
 usage: merge.py [-h] -i INSTANCE [-e ENCODING] [-s SINGLE] [-t] [-v]
 
