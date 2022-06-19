@@ -48,10 +48,11 @@ position(R,C,T) :- position(R,C,T-1), not move(R,_,T), isRobot(R), time(T).
 
 
 % Order fulfillment (Goal condition)
-processed(A,R) :- ordered(O,A), shelved(S,A), isRobot(R), position(S,C,0), position(R,C,horizon).
-processed(A)   :- processed(A,R).
-:- ordered(O,A), not processed(A).
-
+%processed(A,R) :- ordered(O,A), shelved(S,A), isRobot(R), position(S,C,0), position(R,C,horizon).
+%processed(A)   :- processed(A,R).
+%:- ordered(O,A), not processed(A).
+atGoal(R) :- position(shelf(R),C,0), position(robot(R),C,horizon).
+:- not atGoal(R), isRobot(robot(R)).
 
 % Output conversion
 #show.
