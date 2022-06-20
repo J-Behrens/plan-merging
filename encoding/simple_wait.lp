@@ -1,24 +1,25 @@
 #include "input.lp".
-time(T) :- old_move(_,_,T).
-time(T-1) :- time(T), T>0.
+time(0..M) :- M=#max{T : old_move(_,_,T)}.
 
 old_move(R,D,T) :- occurs(object(robot,R),action(move,D),T).
 
-% - move/3 ----------------------------------------------------------------------
-position(robot(R),(X+DX,Y+DY),T) :- old_move(R,(DX,DY),T), position(robot(R),(X,Y),T-1).
-
-% - inertia ---------------------------------------------------------------------
-position(robot(R),C,T) :- position(robot(R),C,T-1), not old_move(R,_,T), time(T).
+% - positions:
+position(robot(R),(X+DX,Y+DY),T) :-     old_move(R,(DX,DY),T), position(robot(R),(X,Y),T-1).
+position(robot(R),C          ,T) :- not old_move(R,_      ,T), position(robot(R),C    ,T-1), time(T).
 
 % - Vertex conflict
-vc(P,R,R2,T) :- position(robot(R),P,T), position(robot(R2),P,T), R<R2.
+{vc(R,R2)} :- position(robot(R),P,T), position(robot(R2),P,T), R<R2.
+:- {vc(_,_)}!=1.
 
 % - Path length
-pl(R,T) :- position(robot(R),P,T), not position(robot(R),_,T+1).
+atleastpl(R,T) :- old_move(R,_,T), position(robot(R),P,T2), vc(R,_).
+atleastpl(R,T) :- old_move(R,_,T), position(robot(R),P,T2), vc(_,R).
+atleastpl(R,L) :- atleastpl(R,L+1), L>=0.
+       pl(R,L) :- atleastpl(R,L), not atleastpl(R,L+1).
 
 % - Robot with shorter or equal path length waits to avoid vertex conflict
-wait(R ) :- vc(P,R,R2,T), pl(R,L), pl(R2,L2), L<=L2.
-wait(R2) :- vc(P,R,R2,T), pl(R,L), pl(R2,L2), L> L2.
+wait(R ) :- vc(R,R2), pl(R,L), pl(R2,L2), L<=L2.
+wait(R2) :- vc(R,R2), pl(R,L), pl(R2,L2), L> L2.
 
 % - Wait effects:
 move(R,D,T  ) :- old_move(R,D,T), not wait(R).
