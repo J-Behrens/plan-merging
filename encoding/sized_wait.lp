@@ -1,39 +1,44 @@
 #include "input.lp".
-time(T)   :- old_move(_,_,T).
-time(T-1) :- time(T), T>0.
+time(0..M) :- M=#max{T : old_move(_,_,T)}.
 
 old_move(R,D,T) :- occurs(object(robot,R),action(move,D),T).
 
-% - move/3 ----------------------------------------------------------------------
-position(robot(R),(X+DX,Y+DY),T) :- old_move(R,(DX,DY),T), position(robot(R),(X,Y),T-1).
-
-% - inertia ---------------------------------------------------------------------
-position(robot(R),C,T) :- position(robot(R),C,T-1), not old_move(R,_,T), time(T).
+% - positions:
+position(robot(R),(X+DX,Y+DY),T) :-     old_move(R,(DX,DY),T), position(robot(R),(X,Y),T-1).
+position(robot(R),C          ,T) :- not old_move(R,_      ,T), position(robot(R),C    ,T-1), time(T).
 
 % - Vertex conflict
-vc(S,P,R,T) :- S={position(robot(_),P,T)}, position(robot(R),P,T), S>1.
+vc(S,P,T) :- S={position(robot(_),P,T)}, position(robot(_),P,T), S>1.
 
-%% determine biggest conflict
-atleastvc(S,P,R,T) :- vc(S,P,R,T).
-atleastvc(S-1,P,R,T) :- atleastvc(S,P,R,T), S>2.
-vc_max(S,P,R,T) :- atleastvc(S,P,R,T), not atleastvc(S+1,_,R,_).
+% - Biggest conflict
+atleastvc(S,P,T) :- vc(S,P,T).
+atleastvc(S-1,P,T) :- atleastvc(S,P,T), S>2.
+{vc_max(S,P,T)} :- atleastvc(S,P,T), not atleastvc(S+1,_,_).
+:- {vc_max(_,_,_)}!=1.
 
-% - Path length
-pl(R,T) :- position(robot(R),P,T), not position(robot(R),_,T+1), vc(_,_,R,_).
+% - Earliest:
+:- vc_max(S,_,T), vc(S,_,T2), T>T2.
 
-% - Robot waitings if path lengths are all same
-{wait(R,W) : W=0..S-1, vc_max(S,P,R,T)}.	% Add: check if path lengths are equal
 
-% must wait if part of conflict (one can wait 0)
-:- not wait(R,_), vc(_,P,R,T).
+% - Path length:
+atleastpl(R,T) :- old_move(R,_,T), position(robot(R),P,T2), vc_max(_,P,T2).
+atleastpl(R,L) :- atleastpl(R,L+1), L>=0.
+       pl(R,L) :- atleastpl(R,L), not atleastpl(R,L+1).
 
-% not same wait durations
-:- wait(R,W), wait(R2,W), vc(S,P,R,T), vc(S,P,R2,T), R<R2.
+% - Robot waitings
+1{wait(R,0..S-1)}1 :- position(robot(R),P,T), vc_max(S,P,T).
+
+% not wait the same
+:- wait(R,W), wait(R2,W), vc_max(S,P,T), position(robot(R),P,T), position(robot(R2),P,T), R<R2.
+
+% robot with shorter plans wait longer
+waits_longer(R2,R) :- wait(R,W), wait(R2,W2), W<W2.
+longer_plan(R2,R) :- pl(R,L), pl(R2,L2), L<L2.
+:- waits_longer(R2,R), vc_max(S,P,T), position(robot(R),P,T), position(robot(R2),P,T), R!=R2, longer_plan(R2,R).
 
 % - Wait effects:
 move(R,D,T  ) :- old_move(R,D,T), not wait(R,_).
-move(R,D,T  ) :- old_move(R,D,T),     wait(R,0).
-move(R,D,T+S) :- old_move(R,D,T),     wait(R,S).
+move(R,D,T+W) :- old_move(R,D,T),     wait(R,W).
 
 #show.
 #show occurs(object(robot,R),action(move,D),T) : move(R,D,T).
