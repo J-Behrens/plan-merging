@@ -23,7 +23,7 @@
 
 ## [merge.py:](merge.py)
 ```sh
-usage: merge.py [-h] -i INSTANCE [-e ENCODING] [-s SINGLE] [-t] [-v]
+usage: merge.py [-h] -i INSTANCE [-e ENCODING] [-s] [-v]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -31,8 +31,6 @@ optional arguments:
                         Instance file
   -e ENCODING, --encoding ENCODING
                         Merging encoding
-  -s SINGLE, --single SINGLE
-                        Get single agent plans
-  -t, --test            Test merging encoding
+  -s, --single          Get single agent plans
   -v, --visualize       Visualize output with asprilo visualizer
 ```
