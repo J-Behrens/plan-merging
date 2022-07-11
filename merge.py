@@ -9,7 +9,7 @@ def write_instance(dest):
 def plan_exists():
 	present = True
 	instance_file = open(args.instance,'r')
-	if (re.search('%plan', instance_file.read())) is None:
+	if (re.search('move', instance_file.read())) is None:
 		present = False
 	instance_file.close()
 	return(present)
