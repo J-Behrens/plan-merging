@@ -1,98 +1,83 @@
 import argparse, os, re, subprocess, random, shutil
 from subprocess import getoutput
 
-def write_instance(dest):
-	with open(args.instance, "r") as inst:
-		with open(dest, "w") as fu:
-			fu.write(inst.read())	
-
-def plan_exists():
+def plan_exists(): # checks if instance contains plans
 	present = True
-	instance_file = open(args.instance,'r')
-	if (re.search('move', instance_file.read())) is None:
-		present = False
-	instance_file.close()
+	with open(args.instance,'r') as instance_file:
+		if (re.search('move', instance_file.read())) is None: present = False
 	return(present)
-			
-def alt_fixed(robot_id):
-	if v_conflict():
-		output = getoutput('clingo temp.lp encoding/vertex_fixed.lp -V0 --out-atomf=%s. -c fixed=' + str(robot_id) + ' | head -n -1')
-		if error(output):
-			print(output)
-			return(True)
-		else:
-			with open('temp.lp', "w") as temp:
-				temp.write(output)
-	if e_conflict():
-		output = getoutput('clingo temp.lp encoding/edge_fixed.lp -V0 --out-atomf=%s. -c fixed=' + str(robot_id) + ' | head -n -1')
-		if error(output):
-			print(output)
-			return(True)
-		else:
-			with open('temp.lp', "w") as temp:
-				temp.write(output)
 
-def error(output):
-	if (re.search('ERROR', output)) is None and output != '': return(False)
-	else: return(True)
-		
-def v_conflict():
-	if (re.search('vc', getoutput('clingo temp.lp encoding/test_vc.lp -V0 | head -n -1'))) is None: return(False)
-	else: return(True)	
-		
-def e_conflict():
-	if (re.search('ec', getoutput('clingo temp.lp encoding/test_ec.lp -V0 | head -n -1'))) is None: return(False)
-	else: return(True)	
-		
-def conflict():
-	if v_conflict() or e_conflict(): return(True)
+def error_check(output): # checks output for errors and unsatisfiability
+	if (re.search('ERROR', output)):
+		print(output)
+		exit()
+	elif output == '':
+		print('UNSAT (faulty encoding)')
+		exit()
 	else: return(False)
-		
-def prio():
+
+def resolve(typ, robot_id):
+	output = getoutput('clingo temp.lp encoding/' + typ + '_fixed.lp -V0 --out-atomf=%s. -c fixed=' + str(robot_id) + ' | head -n -1')
+	error_check(output)
+	with open('temp.lp', "w") as temp:
+		temp.write(output)
+
+def conflict(typ, robot_id): # checks plan for vertex or edge conflicts
+	return getoutput('clingo temp.lp encoding/test_' + typ + '_fixed.lp -V0 -c fixed=' + str(robot_id) + '| head -n -1')
+
+def num_robots(): # counts number of robots in plans of instance
 	num_robots = getoutput('clingo encoding/numR.lp ' + args.instance + ' -V0| head -n -1')
-	num_robots = int((num_robots.split('('))[1].split(')')[0])
-	order = list(range(1, num_robots+1))
+	return int((num_robots.split('('))[1].split(')')[0])
+
+def append_robot_init(robot_id): # appends init and path of robot to the temporary solution
+	init = getoutput('clingo encoding/get_robot_init.lp -c id=' + str(robot_id) + ' ' + args.instance + ' -V0 --out-atomf=%s. | head -n -1')
+	with open('temp.lp', "a") as temp:
+		temp.write(init)
+
+def append_basic_init(): # appends init of shelves, products, nodes and orders to the temporary solution
+	init = getoutput('clingo encoding/get_basic_init.lp ' + args.instance + ' -V0 --out-atomf=%s. | head -n -1')
+	with open('temp.lp', "a") as temp:
+		temp.write(init)
+
+def prio(): # merges plans by using priorities
+	num_rob = num_robots()
+	order = list(range(1, num_rob+1)) # init priorities
+	if args.retries: retries_robot = args.retries + 1 # set number of retries per robot
+	else: retries_robot = num_rob + 1
 	stop = False
 	retry = True
 	while retry:
 		with open('temp.lp', "w") as temp:
 			temp.write('')
 		random.shuffle(order)
-		print(order)
-		
+		append_basic_init()
 		for robot_id in order:
-			init = getoutput('clingo encoding/get_init.lp -c id=' + str(robot_id) + ' ' + args.instance + ' -V0 --out-atomf=%s. | head -n -1')
-			with open('temp.lp', "a") as temp:
-				temp.write(init)
-			path = getoutput('clingo encoding/get_path.lp -c id=' + str(robot_id) + ' ' + args.instance + ' -V0 --out-atomf=%s. | head -n -1')
-			with open('temp.lp', "a") as temp:
-				temp.write(path)
+			append_robot_init(robot_id)
 			if robot_id != order[0]:
 				count = 0
 				count_rep = 0
-				while conflict():
+				e_cs = conflict('ec', robot_id)
+				v_cs = conflict('vc', robot_id)
+				v_cs_before = ''
+				v_cs_befbef = ''
+				while v_cs != '' or e_cs != '':
 					count = count + 1
-					shutil.copyfile('temp.lp', 'temp-1.lp')
-					if alt_fixed(robot_id):
-						stop = True
-						break
-					v_cs        = getoutput('clingo temp.lp   encoding/test_vc_fixed.lp -V0 -c fixed=' + str(robot_id) + '| head -n -1')
-					v_cs_before = getoutput('clingo temp-1.lp encoding/test_vc_fixed.lp -V0 -c fixed=' + str(robot_id) + '| head -n -1')
-					e_cs        = getoutput('clingo temp.lp   encoding/test_ec_fixed.lp -V0 -c fixed=' + str(robot_id) + '| head -n -1')
-					e_cs_before = getoutput('clingo temp-1.lp encoding/test_ec_fixed.lp -V0 -c fixed=' + str(robot_id) + '| head -n -1')
-					
-					if v_cs_before in v_cs and e_cs==e_cs_before:
+					if v_cs != '': resolve('vertex', robot_id)
+					e_cs = conflict('ec', robot_id)
+					if e_cs != '': resolve('edge', robot_id)
+					if count > 0: v_cs_befbef = v_cs_before
+					v_cs_before = v_cs
+					v_cs = conflict('vc', robot_id)
+					e_cs = conflict('ec', robot_id)
+					if (v_cs_before in v_cs and v_cs_before!='') or (v_cs_befbef in v_cs and v_cs_befbef!=''):
 						count_rep = count_rep + 1
 						if count_rep==2: break
-					if count == 20: break
+					if count == retries_robot: break
 				if count_rep==2: break
-				if count == 20:
+				if count == retries_robot:
 					retry = True
 					break
-			if stop:
-				retry = False
-				break
-		if count != 20 and count_rep!=2:
+		if count != retries_robot and count_rep!=2:
 			retry = False
 
 def single():
@@ -107,10 +92,11 @@ def single():
 			print("Appended single agent plans to instance file!")
 			print("Horizon=" + str(horizon))	
 		else: horizon = horizon+1
-		
+
 parser = argparse.ArgumentParser()
 
 parser.add_argument("-i", "--instance",	help="Instance file",					required=True)
+parser.add_argument("-r", "--retries",	help="Number of retries per robot",		  	type=int)
 parser.add_argument("-s", "--single",		help="Get single agent plans and add to instance",  	action='store_true')
 parser.add_argument("-v", "--visualize",	help="Visualize output with asprilo visualizer",    	action='store_true')
 #parser.add_argument("-b", "--benchmark",	help="Analyze runtimes",       			action='store_true')
