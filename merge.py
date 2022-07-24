@@ -1,5 +1,10 @@
-import argparse, os, re, subprocess, random, shutil
+import argparse, os, re, subprocess, random, clingo
 from subprocess import getoutput
+import cProfile
+
+def get_model(m):
+        global model
+        model = str(m)
 
 def plan_exists(): # checks if instance contains plans
 	present = True
@@ -17,68 +22,95 @@ def error_check(output): # checks output for errors and unsatisfiability
 	else: return(False)
 
 def resolve(typ, robot_id):
-	output = getoutput('clingo temp.lp encoding/' + typ + '_fixed.lp -V0 --out-atomf=%s. -c fixed=' + str(robot_id) + ' | head -n -1')
-	error_check(output)
-	with open('temp.lp', "w") as temp:
-		temp.write(output)
+        ctl = clingo.Control(['-c fixed=' + str(robot_id)])
+        ctl.load('encoding/' + typ + '_fixed.lp')
+        ctl.load('temp.lp')
+        ctl.ground([("base", [])])
+        ctl.solve(on_model=get_model)
+        model_with_space = model + ' '
+        model_with_dots = model_with_space.replace(" ", ". ")
+        error_check(model_with_dots)
+        with open('temp.lp', "w") as temp:
+                temp.write(model_with_dots)
 
 def conflict(typ, robot_id): # checks plan for vertex or edge conflicts
-	return getoutput('clingo temp.lp encoding/test_' + typ + '_fixed.lp -V0 -c fixed=' + str(robot_id) + '| head -n -1')
+        ctl = clingo.Control(['-c fixed=' + str(robot_id)])
+        ctl.load('encoding/test_' + typ + '_fixed.lp')
+        ctl.load('temp.lp')
+        ctl.ground([("base", [])])
+        ctl.solve(on_model=get_model)
+        return(model)
 
-def num_robots(): # counts number of robots in plans of instance
-	num_robots = getoutput('clingo encoding/numR.lp ' + args.instance + ' -V0| head -n -1')
-	return int((num_robots.split('('))[1].split(')')[0])
+def num_robots(instance): # counts number of robots in plans of instance
+        num=0
+        tmp=instance.split('init(object(robot,')
+        for par in tmp:
+                if '),' in par:
+                        new_str = par.split('),')[0]
+                        if new_str.isdigit():
+                                new = int(new_str)
+                                if new > num:
+                                        num = new
+        return(num)
 
-def append_robot_init(robot_id): # appends init and path of robot to the temporary solution
-	init = getoutput('clingo encoding/get_robot_init.lp -c id=' + str(robot_id) + ' ' + args.instance + ' -V0 --out-atomf=%s. | head -n -1')
-	with open('temp.lp', "a") as temp:
-		temp.write(init)
+def append_robot_init(instance, robot_id): # appends init and path of robot to the temporary solution
+        instance_splitted = instance.split('\n')
+        init = ''
+        for line in instance_splitted:
+                if 'robot,' + str(robot_id) + '), value(at' in line or 'robot,' + str(robot_id) + '),action(move' in line: init = init + line + '\n'
+        with open('temp.lp', "a") as temp:
+                temp.write(init)
 
-def append_basic_init(): # appends init of shelves, products, nodes and orders to the temporary solution
-	init = getoutput('clingo encoding/get_basic_init.lp ' + args.instance + ' -V0 --out-atomf=%s. | head -n -1')
-	with open('temp.lp', "a") as temp:
-		temp.write(init)
+def write_basic_init(instance): # appends init of shelves, products, nodes and orders to the temporary solution
+        init = ''
+        instance_splitted = instance.split('\n')
+        for line in instance_splitted:
+                if 'node' in line or 'shelf' in line or 'order' in line or 'product' in line: init = init + line + '\n'
+        with open('temp.lp', "w") as temp:
+                temp.write(init)
 
 def prio(): # merges plans by using priorities
-	num_rob = num_robots()
+	with open(args.instance, "r") as inst:
+		instance = inst.read()
+	num_rob = num_robots(instance)
 	order = list(range(1, num_rob+1)) # init priorities
 	if args.retries: retries_robot = args.retries + 1 # set number of retries per robot
-	else: retries_robot = num_rob + 1
-	stop = False
+	else: retries_robot = (num_rob + 1)//2
 	retry = True
 	while retry:
-		with open('temp.lp', "w") as temp:
-			temp.write('')
+		retry = False
 		random.shuffle(order)
-		append_basic_init()
+		write_basic_init(instance)
 		for robot_id in order:
-			append_robot_init(robot_id)
+			append_robot_init(instance, robot_id)
 			if robot_id != order[0]:
 				count = 0
 				count_rep = 0
-				e_cs = conflict('ec', robot_id)
 				v_cs = conflict('vc', robot_id)
+				if v_cs == '': e_cs = conflict('ec', robot_id)
 				v_cs_before = ''
 				v_cs_befbef = ''
 				while v_cs != '' or e_cs != '':
 					count = count + 1
-					if v_cs != '': resolve('vertex', robot_id)
-					e_cs = conflict('ec', robot_id)
-					if e_cs != '': resolve('edge', robot_id)
-					if count > 0: v_cs_befbef = v_cs_before
-					v_cs_before = v_cs
-					v_cs = conflict('vc', robot_id)
-					e_cs = conflict('ec', robot_id)
+					if v_cs != '':
+						resolve('vertex', robot_id)
+						e_cs = conflict('ec', robot_id)
+						if e_cs == '':
+							v_cs_befbef = v_cs_before
+							v_cs_before = v_cs
+							v_cs = conflict('vc', robot_id)
+					if e_cs != '':
+						resolve('edge', robot_id)
+						v_cs_befbef = v_cs_before
+						v_cs_before = v_cs
+						v_cs = conflict('vc', robot_id)
+						if v_cs == '': e_cs = conflict('ec', robot_id)					
 					if (v_cs_before in v_cs and v_cs_before!='') or (v_cs_befbef in v_cs and v_cs_befbef!=''):
 						count_rep = count_rep + 1
-						if count_rep==2: break
-					if count == retries_robot: break
-				if count_rep==2: break
-				if count == retries_robot:
-					retry = True
-					break
-		if count != retries_robot and count_rep!=2:
-			retry = False
+						if count_rep==2: retry = True
+					if count == retries_robot: retry = True
+					if retry: break
+				if retry: break
 
 def single():
 	if plan_exists(): print("Instance already contains single agent plans!")
@@ -104,5 +136,6 @@ parser.add_argument("-v", "--visualize",	help="Visualize output with asprilo vis
 args = parser.parse_args()
 
 if args.single: single()
-else: prio()
+#else: prio()
+else: cProfile.run('prio()')
 if args.visualize: os.system('viz -p temp.lp')
