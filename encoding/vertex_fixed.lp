@@ -18,39 +18,27 @@ poss_vc(R,fixed,T) :- position(robot(R),P,T), position(robot(fixed),P,T), R!=fix
 
 % Sidestep needed:
 % Robot R waits, fixed robot collides
-side_vc(fixed,R,T) :- vc(fixed,R,T), position(robot(R),P,T-1), position(robot(R),P,T), position(robot(R),P,T+1), not short(fixed), not short(R),
+side_vc(fixed,R,T) :- vc(fixed,R,T), position(robot(R),P,T-1), position(robot(R),P,T), position(robot(R),P,T+1),
                                      position(robot(fixed),P2,T-1), position(robot(fixed),P,T), position(robot(fixed),P3,T+1), P!=P2.
-side_vc(R,fixed,T) :- vc(R,fixed,T), position(robot(R),P,T-1), position(robot(R),P,T), position(robot(R),P,T+1), not short(fixed), not short(R),
+side_vc(R,fixed,T) :- vc(R,fixed,T), position(robot(R),P,T-1), position(robot(R),P,T), position(robot(R),P,T+1),
                                      position(robot(fixed),P2,T-1), position(robot(fixed),P,T), position(robot(fixed),P3,T+1), P!=P2.
 
-side_vc(fixed,R,T) :- vc(fixed,R,T), position(robot(fixed),P ,T-1), position(robot(R),P2,T-1), 
-                                     position(robot(fixed),P2,T+1), position(robot(R),P ,T+1), not short(fixed), not short(R).
-side_vc(R,fixed,T) :- vc(R,fixed,T), position(robot(R),P ,T-1), position(robot(fixed),P2,T-1), 
-                                     position(robot(R),P2,T+1), position(robot(fixed),P ,T+1), not short(R), not short(fixed).
+side_vc(fixed,R,T) :- vc(fixed,R,T), position(robot(fixed),P ,T-1), position(robot(R),P2,T-1), position(robot(fixed),P2,T+1), position(robot(R),P ,T+1).
+side_vc(R,fixed,T) :- vc(R,fixed,T), position(robot(R),P ,T-1), position(robot(fixed),P2,T-1), position(robot(R),P2,T+1), position(robot(fixed),P ,T+1).
+                                                                        
+side_vc(fixed,R,T) :- vc(fixed,R,T), position(robot(fixed),P,T-1), position(robot(fixed),P,T), position(robot(fixed),P,T+1).
+side_vc(R,fixed,T) :- vc(R,fixed,T), position(robot(fixed),P,T-1), position(robot(fixed),P,T), position(robot(fixed),P,T+1).    
+                                     
+side_vc(fixed,R,T) :- vc(fixed,R,T), position(robot(R),P,T+1), position(robot(fixed),P,T-1), position(robot(fixed),P2,T+1), P!=P2.              
+side_vc(R,fixed,T) :- vc(R,fixed,T), position(robot(R),P,T+1), position(robot(fixed),P,T-1), position(robot(fixed),P2,T+1), P!=P2.
 
-side_vc(fixed,R,T) :- vc(fixed,R,T), position(robot(fixed),P,T-1), position(robot(fixed),P,T),
-                                     position(robot(fixed),P,T+1), not short(fixed), not short(R).
-side_vc(R,fixed,T) :- vc(R,fixed,T), position(robot(fixed),P,T-1), position(robot(fixed),P,T), 
-                                     position(robot(fixed),P,T+1), not short(R), not short(fixed).
-side_vc(fixed,R,T) :- vc(fixed,R,T), position(robot(R),P,T+1), position(robot(fixed),P,T-1), position(robot(fixed),P2,T+1), P!=P2, not short(R), not short(fixed).              
-side_vc(R,fixed,T) :- vc(R,fixed,T), position(robot(R),P,T+1), position(robot(fixed),P,T-1), position(robot(fixed),P2,T+1), P!=P2, not short(R), not short(fixed).
+side_vc(fixed,R,T) :- vc(fixed,R,T), position(robot(R),P,T-1), position(robot(fixed),P,T+1), position(robot(fixed),P2,T-1), position(robot(fixed),P2,T), P!=P2.
+side_vc(R,fixed,T) :- vc(R,fixed,T), position(robot(R),P,T-1), position(robot(fixed),P,T+1), position(robot(fixed),P2,T-1), position(robot(fixed),P2,T), P!=P2.
 
-side_vc(fixed,R,T) :- vc(fixed,R,T), position(robot(R),P,T-1), position(robot(fixed),P,T+1), position(robot(fixed),P2,T-1), position(robot(fixed),P2,T), P!=P2, not short(R), not short(fixed).
-side_vc(R,fixed,T) :- vc(R,fixed,T), position(robot(R),P,T-1), position(robot(fixed),P,T+1), position(robot(fixed),P2,T-1), position(robot(fixed),P2,T), P!=P2, not short(R), not short(fixed).
-
-side_vc(fixed,R,T) :- vc(fixed,R,T), position(robot(fixed),P,T-1), position(robot(fixed),P,T), not short(R), not short(fixed).
-side_vc(R,fixed,T) :- vc(R,fixed,T), position(robot(fixed),P,T-1), position(robot(fixed),P,T), not short(R), not short(fixed).                            
+side_vc(fixed,R,T) :- vc(fixed,R,T), position(robot(fixed),P,T-1), position(robot(fixed),P,T).
+side_vc(R,fixed,T) :- vc(R,fixed,T), position(robot(fixed),P,T-1), position(robot(fixed),P,T).                            
                             
-short(99).
-
-wait_vc(fixed,R,T) :- not side_vc(fixed,R,T), vc(fixed,R,T).
-wait_vc(R,fixed,T) :- not side_vc(R,fixed,T), vc(R,fixed,T).
-wait_vc(fixed,R,T) :- side_vc(fixed,R,T), not poss_sidestep(fixed,_,_).
-wait_vc(R,fixed,T) :- side_vc(R,fixed,T), not poss_sidestep(fixed,_,_).
-
-% - Wait
-wait(fixed) :- wait_vc(fixed,R2,_), not short(fixed).
-wait(fixed) :- wait_vc(R,fixed,_), not short(fixed).
+side_vc(99,99,99).
 
 sidestep(fixed,T)  :- side_vc(fixed,R2,T).
 sidestep(fixed,T)  :- side_vc(R,fixed,T).
@@ -70,20 +58,26 @@ poss_sidestep(fixed,P,T) :- position(robot(fixed),P,T-1), sidestep(fixed,T2), T<
 :- sidestep(R,_,T), poss_sidestep(R,_,T2), T<T2.
 
 % Keep moves of uninvolved robots:
-move(R,D,T) :- old_move(R,D,T), not sidestep(R,_,_), not wait(R), not short(R).
+move(R,D,T) :- old_move(R,D,T), not sidestep(R,_,_), not wait(R).
 
 % keep old moves before sidestep:
 move(R,D,T) :- old_move(R,D,T), sidestep(R,_,T2), T<T2.
 
-pos_move(R,D,T) :-  nextto(P,D,P2), direction(D), not position(robot(_),P2,T), position(robot(R2),P,T), 
-position(robot(R2),P3,T-1), P2!=P3, position(robot(R2),P4,T+1), P2!=P4, 
-R2!=fixed, not old_move(R,_,T), sidestep(R,P,T).
+pos_move(R,D,T) :-  nextto(P,D,P2), direction(D), not position(robot(_),P2,T), position(robot(R2),P,T), position(robot(R2),P3,T-1), P2!=P3, position(robot(R2),P4,T+1), P2!=P4, R2!=fixed, not old_move(R,_,T), sidestep(R,P,T).
 
 {move(R,D,T)} :- pos_move(R,D,T).
 :- 0{move(R,_,T)}0, pos_move(R,_,T).
 :- 2{move(R,_,T)}, pos_move(R,_,T).
 
 wait(fixed) :- not move(fixed,_,T), sidestep(R,P,T).
+
+wait_vc(fixed,R,T) :- not side_vc(fixed,R,T), vc(fixed,R,T).
+wait_vc(R,fixed,T) :- not side_vc(R,fixed,T), vc(R,fixed,T).
+wait_vc(fixed,R,T) :- side_vc(fixed,R,T), not poss_sidestep(fixed,_,_).
+wait_vc(R,fixed,T) :- side_vc(R,fixed,T), not poss_sidestep(fixed,_,_).
+
+wait(fixed) :- wait_vc(fixed,R2,_).
+wait(fixed) :- wait_vc(R,fixed,_).
 
 % elif this side is possible (note X and Y switched):
 move(R,( DY, DX),T) :- old_move(R,(DX,DY),T), sidestep(R,P,T), nextto(P,(DY,DX),_).
@@ -100,5 +94,4 @@ move(R,D,T+(2*(T3-T2))+3) :- old_move(R,D,T), sidestep(R,_,T2), T>=T2, sidestep(
 move(R,D,T+1) :- old_move(R,D,T), not sidestep(R,_,_), wait(R).
 
 direction((X,Y)) :- X=-1..1, Y=-1..1, |X+Y|=1.
-nextto((X,Y),(DX,DY),(X',Y')) :- direction((DX,DY)), position((X,Y)), position((X',Y')),
-                                 (X,Y)=(X'-DX,Y'-DY), (X',Y')=(X+DX,Y+DY).
+nextto((X,Y),(DX,DY),(X',Y')) :- direction((DX,DY)), position((X,Y)), position((X',Y')), (X,Y)=(X'-DX,Y'-DY), (X',Y')=(X+DX,Y+DY).
