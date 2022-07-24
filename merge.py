@@ -1,6 +1,5 @@
 import argparse, os, re, subprocess, random, clingo
 from subprocess import getoutput
-import cProfile
 
 def get_model(m):
         global model
@@ -136,6 +135,5 @@ parser.add_argument("-v", "--visualize",	help="Visualize output with asprilo vis
 args = parser.parse_args()
 
 if args.single: single()
-#else: prio()
-else: cProfile.run('prio()')
+else: prio()
 if args.visualize: os.system('viz -p temp.lp')
