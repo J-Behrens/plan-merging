@@ -1,7 +1,7 @@
 # Plan Merging
 <details open><summary><strong>About</strong></summary>
 
-#### This project is about merging single agent plans so that the resulting plan is conflict free.
+#### This project is about merging single agent plans so that the result is a valid multi agent plan that is free of the following conflicts:
 <details><summary><strong>Edge conflicts</strong></summary>
 
 - Happen if two agents move along the same edge at the same time (left GIF).
@@ -21,14 +21,23 @@
 
 </details>
 
-## [merge.py:](merge.py)
-```sh
-usage: merge.py [-h] -i INSTANCE [-s] [-v]
+### An instance containing initials and single agent plans in asprilo format can be merged by using [merge.py:](merge.py)
+<details open><summary><strong>Usage</strong></summary>
 
-optional arguments:
-  -h, --help            show this help message and exit
+```sh
+usage: merge.py [-h] -i INSTANCE [-r RETRIES] [-s] [-v]
   -i INSTANCE, --instance INSTANCE
                         Instance file
-  -s, --single          Get single agent plans
+optional arguments:
+  -h, --help            show this help message and exit
+  -r RETRIES, --retries RETRIES
+                        Number of retries per robot
+  -s, --single          Get single agent plans and add to instance
   -v, --visualize       Visualize output with asprilo visualizer
 ```
+
+The solution can be obtained from the created temp.lp file. (When interrupted it is also possible to obtain a partial solution from temp.lp.)
+
+</details>
+
+The strategy used in this project does not guarantee optimality nor completeness.
