@@ -7,6 +7,4 @@ position(robot(R),(X+DX,Y+DY),T) :-     move(R,(DX,DY),T), position(robot(R),(X,
 position(robot(R),C          ,T) :- not move(R,_      ,T), position(robot(R),C    ,T-1), time(T).
 
 vc(fixed,R,P,T) :- position(robot(fixed),P,T), position(robot(R),P,T), fixed!=R.
-vc(fixed,R,P,T) :- position(robot(R),P,T), position(robot(fixed),P,T), R!=fixed.
-
 #show vc/4.
