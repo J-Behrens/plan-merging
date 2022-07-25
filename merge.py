@@ -56,7 +56,8 @@ def append_robot_init(instance, robot_id): # appends init and path of robot to t
         instance_splitted = instance.split('\n')
         init = ''
         for line in instance_splitted:
-                if 'robot,' + str(robot_id) + '), value(at' in line or 'robot,' + str(robot_id) + '),action(move' in line: init = init + line + '\n'
+                if 'robot,' + str(robot_id) in line:
+                	if 'value(at' in line or 'action(move' in line: init = init + line + '\n'
         with open('temp.lp', "a") as temp:
                 temp.write(init)
 
