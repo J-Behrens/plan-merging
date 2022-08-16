@@ -40,7 +40,7 @@ def conflict(typ, robot_id): # checks plan for vertex or edge conflicts
         ctl.solve(on_model=get_model)
         return(model)
 
-def num_robots(instance): # counts number of robots in plans of instance
+def num_robots(instance): # gets highest number of robot ID from instance
         num=0
         tmp=instance.split('init(object(robot,')
         for par in tmp:
@@ -56,16 +56,16 @@ def append_robot_init(instance, robot_id): # appends init and path of robot to t
         instance_splitted = instance.split('\n')
         init = ''
         for line in instance_splitted:
-                if 'robot,' + str(robot_id) in line:
+                if 'robot,' + str(robot_id) + ')' in line:
                 	if 'value(at' in line or 'action(move' in line: init = init + line + '\n'
         with open('temp.lp', "a") as temp:
                 temp.write(init)
 
-def write_basic_init(instance): # appends init of shelves, products, nodes and orders to the temporary solution
+def write_basic_init(instance): # appends init nodes and shelves to the temporary solution
         init = ''
         instance_splitted = instance.split('\n')
         for line in instance_splitted:
-                if 'node' in line or 'shelf' in line or 'order' in line or 'product' in line: init = init + line + '\n'
+                if 'node' in line or 'shelf' in line : init = init + line + '\n'
         with open('temp.lp', "w") as temp:
                 temp.write(init)
 
@@ -75,7 +75,7 @@ def prio(): # merges plans by using priorities
 	num_rob = num_robots(instance)
 	order = list(range(1, num_rob+1)) # init priorities
 	if args.retries: retries_robot = args.retries + 1 # set number of retries per robot
-	else: retries_robot = (num_rob + 1)//2
+	else: retries_robot = num_rob
 	retry = True
 	while retry:
 		retry = False
@@ -92,23 +92,19 @@ def prio(): # merges plans by using priorities
 				v_cs_befbef = ''
 				while v_cs != '' or e_cs != '':
 					count = count + 1
+					if robot_id==1: retry=True
+					if robot_id==1: break
 					if v_cs != '':
 						resolve('vertex', robot_id)
 						e_cs = conflict('ec', robot_id)
-						if e_cs == '':
-							v_cs_befbef = v_cs_before
-							v_cs_before = v_cs
-							v_cs = conflict('vc', robot_id)
 					if e_cs != '':
 						resolve('edge', robot_id)
-						v_cs_befbef = v_cs_before
-						v_cs_before = v_cs
-						v_cs = conflict('vc', robot_id)
-						if v_cs == '': e_cs = conflict('ec', robot_id)					
-					if (v_cs_before in v_cs and v_cs_before!='') or (v_cs_befbef in v_cs and v_cs_befbef!=''):
-						count_rep = count_rep + 1
-						if count_rep==2: retry = True
-					if count == retries_robot: retry = True
+						e_cs = conflict('ec', robot_id)
+					v_cs_befbef = v_cs_before
+					v_cs_before = v_cs
+					v_cs = conflict('vc', robot_id)
+					if (v_cs_before in v_cs and v_cs_before!='') or (v_cs_befbef in v_cs and v_cs_befbef!=''): count_rep = count_rep + 1
+					if count == retries_robot or count_rep == 2: retry = True
 					if retry: break
 				if retry: break
 
@@ -128,7 +124,7 @@ def single():
 parser = argparse.ArgumentParser()
 
 parser.add_argument("-i", "--instance",	help="Instance file",					required=True)
-parser.add_argument("-r", "--retries",	help="Number of retries per robot",		  	type=int)
+parser.add_argument("-r", "--retries",		help="Number of retries per robot",		  	type=int)
 parser.add_argument("-s", "--single",		help="Get single agent plans and add to instance",  	action='store_true')
 parser.add_argument("-v", "--visualize",	help="Visualize output with asprilo visualizer",    	action='store_true')
 #parser.add_argument("-b", "--benchmark",	help="Analyze runtimes",       			action='store_true')
