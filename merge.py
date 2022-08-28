@@ -5,10 +5,10 @@ def get_model(m):
         global model
         model = str(m)
 
-def plan_exists(): # checks if instance contains plans
+def plan_exists(robot_id): # checks if instance contains plans
 	present = True
 	with open(args.instance,'r') as instance_file:
-		if (re.search('move', instance_file.read())) is None: present = False
+		if (re.search(robot_id + '\),action\(move', instance_file.read())) is None: present = False
 	return(present)
 
 def error_check(output): # checks output for errors and unsatisfiability
@@ -109,17 +109,18 @@ def prio(): # merges plans by using priorities
 				if retry: break
 
 def single():
-	if plan_exists(): print("Instance already contains single agent plans!")
-	horizon=0
-	while not plan_exists():
-		print('Try with horizon = ' + str(horizon))
-		output = getoutput('clingo encoding/single_agent.lp -c horizon=' + str(horizon) + ' ' + args.instance + ' -V0 --out-atomf=%s. --out-ifs="\n" | head -n -1')
-		if output != '':
-			with open(args.instance, "a") as instance:
-				instance.write("\n%plan\n" + output)
-			print("Appended single agent plans to instance file!")
-			print("Horizon=" + str(horizon))	
-		else: horizon = horizon+1
+	with open(args.instance, "r") as inst:
+		instance = inst.read()
+	for robot_id in (range(1, num_robots(instance)+1)):
+		horizon=0
+		while not plan_exists(str(robot_id)):
+			print('Try with horizon = ' + str(horizon))
+			output = getoutput('clingo encoding/single_agent.lp -c robot_id=' + str(robot_id) + ' -c horizon=' + str(horizon) + ' ' + args.instance + ' -V0 --out-atomf=%s. --out-ifs="\n" | head -n -1')
+			if output != '':
+				with open(args.instance, "a") as instance:
+					instance.write("\n%plan\n" + output)
+				print('Appended shortest path of robot ' + str(robot_id) + ' to instance file!')	
+			else: horizon = horizon+1
 
 parser = argparse.ArgumentParser()
 
