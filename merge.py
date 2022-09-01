@@ -111,6 +111,8 @@ def prio(): # merges plans by using priorities
 def single():
 	with open(args.instance, "r") as inst:
 		instance = inst.read()
+	with open(args.instance, "a") as instance_file:
+		instance_file.write("\n%plan")
 	for robot_id in (range(1, num_robots(instance)+1)):
 		horizon=0
 		while not plan_exists(str(robot_id)):
@@ -118,14 +120,14 @@ def single():
 			output = getoutput('clingo encoding/single_agent.lp -c robot_id=' + str(robot_id) + ' -c horizon=' + str(horizon) + ' ' + args.instance + ' -V0 --out-atomf=%s. --out-ifs="\n" | head -n -1')
 			if output != '':
 				with open(args.instance, "a") as instance:
-					instance.write("\n%plan\n" + output)
+					instance.write("\n" + output)
 				print('Appended shortest path of robot ' + str(robot_id) + ' to instance file!')	
 			else: horizon = horizon+1
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument("-i", "--instance",	help="Instance file",					required=True)
-parser.add_argument("-r", "--retries",		help="Number of retries per robot",		  	type=int)
+parser.add_argument("-r", "--retries",	help="Number of retries per robot",		  	type=int)
 parser.add_argument("-s", "--single",		help="Get single agent plans and add to instance",  	action='store_true')
 parser.add_argument("-v", "--visualize",	help="Visualize output with asprilo visualizer",    	action='store_true')
 #parser.add_argument("-b", "--benchmark",	help="Analyze runtimes",       			action='store_true')
