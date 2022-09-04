@@ -35,7 +35,7 @@ optional arguments:
   -s, --single          Get single agent plans and add to instance
   -v, --visualize       Visualize output with asprilo visualizer
 ```
-## IMPORTANT: If a seemingly easy instance doesn't get solved quickly you might want to manually try a bigger retries value with -r RETRIES. The default equals the number of agents and can in some cases lead to unsolvability or slow solving.
+## IMPORTANT: If a seemingly easy instance doesn't get solved quickly you might want to manually try a bigger retries value with -r RETRIES. The default equals the number of agents and can in some cases lead to unsolvability or slow solving (careful: to big retrie values can have the same effect).
 
 The solution can be obtained from the created temp.lp file. (When interrupted it is also possible to obtain a partial solution from temp.lp.)
 
